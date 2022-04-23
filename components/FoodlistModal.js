@@ -6,29 +6,29 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  ScrollView,
   FlatList,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import axios from 'axios';
-import {Bubbles, DoubleBounce, Bars, Pulse} from 'react-native-loader';
 
 // constants import
 import {icons} from '../constants';
 
 const Foodlistmodal = props => {
-  // random color generator
-  const randomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-  };
-
   // list data hook
   const [listData, setListData] = useState([]);
+
+  // list data based on search
+  const [searchedData, setSearchedData] = useState([]);
+
+  // search key hook
+  const [searchKey, setSearchKey] = useState('');
+
+  // api error hook
+  const [apiError, setApiError] = useState(false);
+
+  // category id to expand hook
+  const [expandCatId, setExpandCatId] = useState(null);
 
   useEffect(() => {
     fetchListData();
@@ -43,23 +43,87 @@ const Foodlistmodal = props => {
       })
       .catch(err => {
         console.log(err);
+        setApiError(true);
       });
+  };
+
+  // random color generator
+  const randomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  };
+
+  // function to search list data
+  const searchListDataHandler = () => {
+    const newData = listData.filter(item => {
+      const itemData = item.title.toUpperCase();
+      const textData = searchKey.toUpperCase();
+      return itemData.indexOf(textData) > -1;
+    });
+    setSearchedData(newData);
   };
 
   // category item render
   const renderCatItem = item => {
+    // sub category item render
+    const renderSubCatItem = item => {
+      return (
+        <View style={styles.subCatItem}>
+          <Text style={styles.listItemText}>{item.title}</Text>
+        </View>
+      );
+    };
+
     return (
-      <TouchableOpacity style={styles.catListItem}>
-        <View // category item image container
-          style={[
-            styles.catListItemIconContainer,
-            {backgroundColor: randomColor()},
-          ]}></View>
-        <Text // category item text
-          style={[styles.catListItemText, {color: randomColor()}]}>
-          {item.title}
-        </Text>
-      </TouchableOpacity>
+      <>
+        <TouchableOpacity
+          style={styles.catListItem}
+          onPress={() =>
+            setExpandCatId(expandCatId === item.id ? null : item.id)
+          }>
+          <View // icon and title container
+            style={{flexDirection: 'row', alignItems: 'center'}}>
+            <View // category item image container
+              style={[
+                styles.catListItemIconContainer,
+                {backgroundColor: randomColor()},
+              ]}></View>
+            <Text // category item text
+              style={[styles.listItemText, {color: randomColor()}]}>
+              {item.title}
+            </Text>
+          </View>
+          <Image // collapse expand icon
+            source={icons.collapse_expand}
+            resizeMode="contain"
+            style={[
+              styles.catListItemIcon,
+              {
+                transform:
+                  expandCatId === item.id
+                    ? [{rotate: '0deg'}]
+                    : [{rotate: '180deg'}],
+              },
+            ]}
+          />
+        </TouchableOpacity>
+
+        {/* sub-category list */}
+
+        {expandCatId === item.id ? (
+          <View style={styles.subCatList}>
+            <FlatList
+              data={item.data}
+              renderItem={({item}) => renderSubCatItem(item)}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          </View>
+        ) : null}
+      </>
     );
   };
 
@@ -84,7 +148,7 @@ const Foodlistmodal = props => {
       </TouchableOpacity>
 
       <Text // heading
-        style={styles.heading}>
+        style={[styles.heading, {color: '#000000'}]}>
         Approved Food List
       </Text>
 
@@ -99,18 +163,47 @@ const Foodlistmodal = props => {
           style={styles.searchInput}
           placeholder="Search"
           placeholderTextColor="#C4C4C4"
+          value={searchKey}
+          onChangeText={text => {
+            setSearchKey(text);
+            searchListDataHandler();
+          }}
         />
       </View>
 
       {/* scrollable list container */}
 
-      <FlatList
-        showsVerticalScrollIndicator={false}
-        horizontal={false}
-        data={listData}
-        renderItem={({item}) => renderCatItem(item)}
-        keyExtractor={(item, index) => index.toString()}
-      />
+      {apiError !== true ? (
+        <FlatList
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          horizontal={false}
+          data={searchKey.length > 0 ? searchedData : listData}
+          renderItem={({item}) => renderCatItem(item)}
+          keyExtractor={(item, index) => index.toString()}
+        />
+      ) : (
+        <View //no data retrived
+          style={styles.noDataContainer}>
+          <Image // no data retrived icon
+            source={icons.caution}
+            style={styles.cautionIcon}
+            resizeMode="contain"
+          />
+
+          <Text
+            style={[styles.heading, {color: '#C4C4C4', marginBottom: '5%'}]}>
+            Snap! Something went wrong.
+          </Text>
+          <TouchableOpacity // retry button
+            style={styles.retryButton}
+            onPress={() => {
+              fetchListData();
+            }}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </Modal>
   );
 };
@@ -130,7 +223,6 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 20,
-    color: '#000000',
     fontWeight: '600',
     marginLeft: '5%',
     marginTop: '5%',
@@ -164,11 +256,12 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginLeft: '5%',
   },
-  scrollableList: {
-    flex: 1,
+  listContainer: {
+    paddingBottom: 50,
   },
   catListItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     backgroundColor: '#fff',
     alignItems: 'center',
     width: '90%',
@@ -186,9 +279,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 5,
   },
-  catListItemText: {
+  listItemText: {
     fontSize: 15,
     fontWeight: '400',
+    marginLeft: '10%',
+    color: '#C4C4C4',
+  },
+  catListItemIcon: {
+    height: '35%',
+    tintColor: '#C4C4C4',
+  },
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cautionIcon: {
+    height: 45,
+    tintColor: '#C4C4C4',
+  },
+  retryButton: {
+    backgroundColor: '#E8EFF7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '45%',
+    height: 45,
+    borderRadius: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  subCatList: {
+    width: '90%',
+    borderTopColor: '#C4C4C4',
+    borderTopWidth: 1,
     marginLeft: '5%',
+  },
+  subCatItem: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    width: '100%',
+    height: 45,
   },
 });
