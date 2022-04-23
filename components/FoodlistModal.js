@@ -68,8 +68,10 @@ const Foodlistmodal = props => {
   };
 
   // category item render
+
   const renderCatItem = item => {
     // sub category item render
+
     const renderSubCatItem = item => {
       return (
         <View style={styles.subCatItem}>
@@ -91,7 +93,8 @@ const Foodlistmodal = props => {
               style={[
                 styles.catListItemIconContainer,
                 {backgroundColor: randomColor()},
-              ]}></View>
+              ]}
+            />
             <Text // category item text
               style={[styles.listItemText, {color: randomColor()}]}>
               {item.title}
@@ -101,7 +104,7 @@ const Foodlistmodal = props => {
             source={icons.collapse_expand}
             resizeMode="contain"
             style={[
-              styles.catListItemIcon,
+              styles.catListExpandCollapseIcon,
               {
                 transform:
                   expandCatId === item.id
@@ -171,7 +174,7 @@ const Foodlistmodal = props => {
         />
       </View>
 
-      {/* scrollable list container */}
+      {/* category list */}
 
       {apiError !== true ? (
         <FlatList
@@ -271,7 +274,7 @@ const styles = StyleSheet.create({
     marginTop: '5%',
   },
   catListItemIconContainer: {
-    opacity: 0.1,
+    opacity: 0.2,
     width: 45,
     height: 45,
     borderRadius: 5,
@@ -281,11 +284,11 @@ const styles = StyleSheet.create({
   },
   listItemText: {
     fontSize: 15,
-    fontWeight: '400',
+    fontWeight: '500',
     marginLeft: '10%',
     color: '#C4C4C4',
   },
-  catListItemIcon: {
+  catListExpandCollapseIcon: {
     height: '35%',
     tintColor: '#C4C4C4',
   },
