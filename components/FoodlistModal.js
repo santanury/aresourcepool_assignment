@@ -255,6 +255,7 @@ const styles = StyleSheet.create({
     marginLeft: '1%',
   },
   searchInput: {
+    flex: 1,
     fontSize: 15,
     color: '#000000',
     fontWeight: '400',
