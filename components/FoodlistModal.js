@@ -40,6 +40,7 @@ const Foodlistmodal = props => {
       .get('https://api.jsonbin.io/b/60e7f4ebf72d2b70bbac2970')
       .then(res => {
         setListData(res.data.data);
+        setApiError(false);
       })
       .catch(err => {
         console.log(err);
@@ -316,6 +317,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+
+  retryText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000000',
   },
   subCatList: {
     width: '90%',
